@@ -10,8 +10,8 @@ export interface IOrder extends Document {
 
   status:
     | "PENDING"
-    | "VERIFIED"
-    | "ASSIGNED"
+    | "CONFIRMED"
+    | "PROCESSING"
     | "APPROVED"
     | "REJECTED"
     | "SHIPPED"
@@ -62,8 +62,8 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       enum: [
         "PENDING",
-        "VERIFIED",
-        "ASSIGNED",
+        "CONFIRMED",
+        "PROCESSING",
         "APPROVED",
         "REJECTED",
         "SHIPPED",
