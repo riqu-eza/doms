@@ -9,6 +9,7 @@ export default function CreateOrder({ vendorId, userId }: { vendorId: string; us
   const [cartOpen, setCartOpen] = useState(false);
   const [discountCode, setDiscountCode] = useState("");
   const [discountValue, setDiscountValue] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch products
   useEffect(() => {
@@ -87,17 +88,18 @@ export default function CreateOrder({ vendorId, userId }: { vendorId: string; us
         subtotal,
         discount: discountValue,
         grandTotal,
-        currency: "USD",
+        currency: "Ksh",
       },
       items: cart,
     };
-console.log("Submitting order:", body);
+    console.log("Submitting order:", body);
+    
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      
     });
+    
     setLoading(false);
     if (res.ok) {
       alert("Order placed!");
@@ -110,6 +112,13 @@ console.log("Submitting order:", body);
       alert("Error: " + err.error);
     }
   };
+
+  // Filter products based on search term
+  const filteredProducts = products.filter(product => 
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -139,55 +148,100 @@ console.log("Submitting order:", body);
           <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-800">Available Medications</h2>
-              <div className="flex items-center bg-gray-100 rounded-full px-3 py-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
                 <input 
                   type="text" 
-                  placeholder="Search medications..." 
-                  className="bg-transparent border-none focus:ring-0 text-sm ml-2"
+                  placeholder="Search drugs by name, SKU or category..."
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
                 />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map((p) => (
-                <div key={p._id} className="border rounded-lg p-4 transition-all hover:shadow-md">
-                  <div className="h-32 bg-teal-50 rounded-lg flex items-center justify-center mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-3 0H8m5 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <h3 className="font-medium text-gray-900">{p.name}</h3>
-                  <p className="text-xs text-teal-600 bg-teal-50 inline-block px-2 py-1 rounded-full mt-1">{p.category}</p>
-                  <p className="font-semibold text-teal-700 mt-2">${p.pricing.basePrice}</p>
-                  <div className="flex justify-between items-center mt-3">
-                    <span className="text-xs text-gray-500">In stock</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => decreaseQty(p._id)}
-                        className="bg-gray-200 text-gray-700 p-1 rounded-full hover:bg-gray-300 transition-colors"
-                        aria-label={`Decrease quantity of ${p.name}`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-500 text-lg font-medium">No medications found</p>
+                <p className="text-gray-400 mt-1">
+                  {searchTerm ? `No results for "${searchTerm}"` : "No medications available"}
+                </p>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="mt-4 text-teal-600 hover:text-teal-700 font-medium"
+                  >
+                    Clear search
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-500 mb-4">
+                  Showing {filteredProducts.length} of {products.length} medications
+                  {searchTerm && ` for "${searchTerm}"`}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredProducts.map((p) => (
+                    <div key={p._id} className="border rounded-lg p-4 transition-all hover:shadow-md">
+                      <div className="h-32 bg-teal-50 rounded-lg flex items-center justify-center mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-3 0H8m5 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
-                      </button>
-                      <button
-                        onClick={() => addToCart(p._id)}
-                        className="bg-teal-600 text-white p-1 rounded-full hover:bg-teal-700 transition-colors"
-                        aria-label={`Add ${p.name} to cart`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                      </button>
+                      </div>
+                      <h3 className="font-medium text-gray-900">{p.name}</h3>
+                      <p className="text-xs text-teal-600 bg-teal-50 inline-block px-2 py-1 rounded-full mt-1">{p.category}</p>
+                      <p className="text-xs text-gray-500 mt-1">SKU: {p.sku}</p>
+                      <p className="font-semibold text-teal-700 mt-2">Ksh {p.pricing?.basePrice?.toFixed(2) || "0.00"}</p>
+                      <div className="flex justify-between items-center mt-3">
+                        <span className={`text-xs px-2 py-1 rounded-full ${p.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {p.available ? 'In stock' : 'Out of stock'}
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => decreaseQty(p._id)}
+                            className="bg-gray-200 text-gray-700 p-1 rounded-full hover:bg-gray-300 transition-colors disabled:opacity-50"
+                            disabled={!cart.find(item => item.productId === p._id)}
+                            aria-label={`Decrease quantity of ${p.name}`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => addToCart(p._id)}
+                            className="bg-teal-600 text-white p-1 rounded-full hover:bg-teal-700 transition-colors disabled:opacity-50"
+                            disabled={!p.available}
+                            aria-label={`Add ${p.name} to cart`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -223,11 +277,11 @@ console.log("Submitting order:", body);
                       const product = products.find((p) => p._id === item.productId);
                       return (
                         <li key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <div>
+                          <div className="flex-1">
                             <span className="block font-medium text-gray-900">{product?.name}</span>
-                            <span className="text-sm text-gray-500">${product?.pricing?.basePrice} each</span>
+                            <span className="text-sm text-gray-500">Ksh {product?.pricing?.basePrice?.toFixed(2) || "0.00"} each</span>
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center mx-2">
                             <button 
                               onClick={() => decreaseQty(item.productId)}
                               className="text-gray-500 hover:text-teal-700 p-1"
@@ -237,7 +291,7 @@ console.log("Submitting order:", body);
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             </button>
-                            <span className="mx-2 font-medium">{item.qty}</span>
+                            <span className="mx-2 font-medium text-lime-600 min-w-[2rem] text-center">{item.qty}</span>
                             <button 
                               onClick={() => addToCart(item.productId)}
                               className="text-gray-500 hover:text-teal-700 p-1"
@@ -248,7 +302,9 @@ console.log("Submitting order:", body);
                               </svg>
                             </button>
                           </div>
-                          <span className="font-semibold">${(product?.pricing?.basePrice || 0) * item.qty}</span>
+                          <span className="font-semibold text-black min-w-[5rem] text-right">
+                            Ksh {((product?.pricing?.basePrice || 0) * item.qty).toFixed(2)}
+                          </span>
                         </li>
                       );
                     })}
@@ -281,22 +337,22 @@ console.log("Submitting order:", body);
                 <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">${subtotal.toFixed(2)}</span>
+                    <span className="font-medium text-cyan-500">Ksh {subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Discount:</span>
-                    <span className="font-medium text-green-600">-${discountValue.toFixed(2)}</span>
+                    <span className="font-medium text-green-600">-Ksh {discountValue.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-semibold pt-2">
                     <span className="text-gray-800">Grand Total:</span>
-                    <span className="text-teal-700">${grandTotal.toFixed(2)}</span>
+                    <span className="text-teal-700">Ksh {grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={handleSubmit}
-                  disabled={loading}
-                  className="mt-6 w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
+                  disabled={loading || cart.length === 0}
+                  className="mt-6 w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Place your order"
                 >
                   {loading ? (
